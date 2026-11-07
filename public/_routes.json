@@ -1,5 +1,5 @@
 {
   "version": 1,
-  "include": ["/releases/*", "/NexGuard.apk"],
+  "include": ["/releases/*", "/NexGuard.apk", "/nexguard.apk"],
   "exclude": []
 }

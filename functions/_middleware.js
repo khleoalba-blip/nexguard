@@ -1,4 +1,14 @@
-export async function onRequest({ request }) {
+const APK_PATH = "/nexguard.apk";
+
+export async function onRequest(context) {
+  const { request, next } = context;
+  const url = new URL(request.url);
+
+  // Acepta /nexguard.apk y /NexGuard.apk (el routing de Pages es case-sensitive).
+  if (url.pathname.toLowerCase() !== APK_PATH) {
+    return next();
+  }
+
   if (request.method !== "GET" && request.method !== "HEAD") {
     return new Response("Método no permitido", {
       status: 405,
@@ -6,7 +16,7 @@ export async function onRequest({ request }) {
     });
   }
 
-  const otaUrl = new URL("/ota/nexguard.json", request.url);
+  const otaUrl = new URL("/ota/nexguard.json", url.origin);
   const otaResponse = await fetch(otaUrl.toString());
 
   if (!otaResponse.ok) {
@@ -26,11 +36,9 @@ export async function onRequest({ request }) {
     });
   }
 
-  const origin = new URL(request.url).origin;
-
   let target;
   try {
-    target = new URL(ota.url, origin);
+    target = new URL(ota.url, url.origin);
   } catch {
     return new Response("La URL de descarga no es válida.", {
       status: 500,
@@ -39,7 +47,7 @@ export async function onRequest({ request }) {
   }
 
   if (
-    target.origin !== origin ||
+    target.origin !== url.origin ||
     !/^\/releases\/nexguard-[0-9]+\.apk$/.test(target.pathname)
   ) {
     return new Response("Destino de descarga no permitido.", {
