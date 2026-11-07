@@ -5,20 +5,26 @@ export async function onRequest({ request, params }) {
     return new Response("Archivo no válido", { status: 404 });
   }
 
-  if (!["GET", "HEAD"].includes(request.method)) {
-    return new Response("Método no permitido", { status: 405 });
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return new Response("Método no permitido", {
+      status: 405,
+      headers: { Allow: "GET, HEAD" }
+    });
   }
 
-  const githubUrl = https://raw.githubusercontent.com/khleoalba-blip/nexguard/main/releases/${filename};
+  const githubUrl = `https://raw.githubusercontent.com/khleoalba-blip/nexguard/main/releases/${filename}`;
 
-  const headers = new Headers();
+  const upstreamHeaders = new Headers({
+    "User-Agent": "nexguard-pages-proxy"
+  });
 
   const range = request.headers.get("Range");
-  if (range) headers.set("Range", range);
+  if (range) upstreamHeaders.set("Range", range);
 
   const response = await fetch(githubUrl, {
     method: request.method,
-    headers
+    headers: upstreamHeaders,
+    redirect: "follow"
   });
 
   if (!response.ok && response.status !== 206) {
@@ -27,19 +33,21 @@ export async function onRequest({ request, params }) {
     });
   }
 
-  const outputHeaders = new Headers(response.headers);
+  const outputHeaders = new Headers();
+  outputHeaders.set("Content-Type", "application/vnd.android.package-archive");
+  outputHeaders.set("Content-Disposition", `attachment; filename="${filename}"`);
+  outputHeaders.set("Accept-Ranges", "bytes");
+  outputHeaders.set("Cache-Control", "public, max-age=300");
 
-  outputHeaders.set(
-    "Content-Type",
-    "application/vnd.android.package-archive"
-  );
+  if (request.method === "GET") {
+    const contentLength = response.headers.get("Content-Length");
+    if (contentLength) outputHeaders.set("Content-Length", contentLength);
+  }
 
-  outputHeaders.set(
-    "Content-Disposition",
-    attachment; filename="${filename}"
-  );
+  const contentRange = response.headers.get("Content-Range");
+  if (contentRange) outputHeaders.set("Content-Range", contentRange);
 
-  return new Response(response.body, {
+  return new Response(request.method === "HEAD" ? null : response.body, {
     status: response.status,
     headers: outputHeaders
   });
