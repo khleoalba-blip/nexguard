@@ -1,1 +1,3 @@
 releases/
+worker.js
+wrangler.jsonc
