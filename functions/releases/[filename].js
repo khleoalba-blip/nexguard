@@ -9,8 +9,7 @@ export async function onRequest({ request, params }) {
     return new Response("Método no permitido", { status: 405 });
   }
 
-  const githubUrl =
-    https://raw.githubusercontent.com/khleoalba-blip/nexguard/main/releases/${filename};
+  const githubUrl = https://raw.githubusercontent.com/khleoalba-blip/nexguard/main/releases/${filename};
 
   const headers = new Headers();
 
